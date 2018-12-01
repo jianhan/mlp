@@ -53,7 +53,7 @@ class Pipeline:
         self.df.dropna(inplace=True)
 
         # replace strings in title
-        self.df['title'] = self.df.apply(lambda row: html.unescape(row['title']), axis=1)
+        self.df['title'] = self.df.apply(lambda row: html.unescape(row['title']).strip(), axis=1)
 
     def __visualization(self):
         self.df.hist()
