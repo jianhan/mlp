@@ -60,9 +60,20 @@ class Pipeline:
         plt.show()
 
     def __feature_engineering(self):
+        # one hot encoding
         self.df = pd.get_dummies(self.df, prefix=['sku'], columns=['sku']) 
         self.df = pd.get_dummies(self.df, prefix=['delivery_zone'], columns=['delivery_zone']) 
         self.df = pd.get_dummies(self.df, prefix=['shop_id'], columns=['shop_id']) 
+
+        # delivery date engineering
+        self.df['d_year'] = self.df['delivery_date'].apply(lambda d: d.year)
+        self.df['d_month'] = self.df['delivery_date'].apply(lambda d: d.month)
+        self.df['d_day'] = self.df['delivery_date'].apply(lambda d: d.day)
+        self.df['d_day_of_week'] = self.df['delivery_date'].apply(lambda d: d.dayofweek)
+        self.df['d_day_name'] = self.df['delivery_date'].apply(lambda d: d.day_name)
+        self.df['d_day_of_year'] = self.df['delivery_date'].apply(lambda d: d.dayofyear)
+        self.df['d_week_of_year'] = self.df['delivery_date'].apply(lambda d: d.weekofyear)
+        self.df['d_quarter'] = self.df['delivery_date'].apply(lambda d: d.quarter)
 
     def __feature_scaling(self):
         pass
