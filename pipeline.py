@@ -12,6 +12,8 @@ class Pipeline:
     def run(self):
         self.__wrangling()
         self.__description()
+        self.__visualization()
+        self.__feature_engineering()
 
     def __description(self):
         df_length = len(self.df)
@@ -54,13 +56,13 @@ class Pipeline:
         self.df['title'] = self.df.apply(lambda row: html.unescape(row['title']), axis=1)
 
     def __visualization(self):
-        self.df[['bet365_away_win_odds', 'bet365_draw_odds', 'bet365_home_win_odds']
-                ].hist(figsize=(12, 4))
-
+        self.df.hist()
         plt.show()
 
     def __feature_engineering(self):
-        pass
+        self.df = pd.get_dummies(self.df, prefix=['sku'], columns=['sku']) 
+        self.df = pd.get_dummies(self.df, prefix=['delivery_zone'], columns=['delivery_zone']) 
+        self.df = pd.get_dummies(self.df, prefix=['shop_id'], columns=['shop_id']) 
 
     def __feature_scaling(self):
         pass
