@@ -2,6 +2,7 @@ import pandas as pd
 from terminaltables import AsciiTable
 import matplotlib.pyplot as plt
 import numpy as np
+import html
 
 class Pipeline:
 
@@ -50,7 +51,7 @@ class Pipeline:
         self.df.dropna(inplace=True)
 
         # replace strings in title
-        self.df['title'] = self.df['title'].str.replace('&amp;','&')
+        self.df['title'] = self.df.apply(lambda row: html.unescape(row['title']), axis=1)
 
     def __visualization(self):
         self.df[['bet365_away_win_odds', 'bet365_draw_odds', 'bet365_home_win_odds']
