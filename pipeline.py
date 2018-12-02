@@ -77,9 +77,18 @@ class Pipeline:
         self.df['title_word_count'] = self.df['title'].apply(lambda x: len(str(x).split(" ")))
         self.df['title_char_count'] = self.df['title'].str.len()
 
-        # title normalization
-        # self.df['title_word_count'] = self.df['title'].apply(lambda row: tn.normalize_corpus(row['title']), axis=1)
+        # title lowercase
+        self.df['title'] = self.df['title'].apply(lambda x: " ".join(x.lower() for x in x.split()))
+
+        # title removing punctuation
+        self.df['title'] = self.df['title'].str.replace('[^\w\s]','')
+
+        # title unescape html
+        self.df['title'] = self.df['title'].apply(lambda x: html.unescape(x))
+
+        # self.df['title_word_count'] = self.df.apply(lambda row: tn.normalize_corpus(row['title']), axis=1)
         # train['word_count'] = train['tweet'].apply(lambda x: len(str(x).split(" ")))
+        print(self.df[['title']].head(10))
 
     def __feature_scaling(self):
         pass
