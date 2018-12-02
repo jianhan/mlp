@@ -3,6 +3,7 @@ from terminaltables import AsciiTable
 import matplotlib.pyplot as plt
 import numpy as np
 import html
+import text_normalizer as tn
 
 class Pipeline:
 
@@ -12,7 +13,7 @@ class Pipeline:
     def run(self):
         self.__wrangling()
         self.__description()
-        self.__visualization()
+        # self.__visualization()
         self.__feature_engineering()
 
     def __description(self):
@@ -52,9 +53,6 @@ class Pipeline:
         # drop null
         self.df.dropna(inplace=True)
 
-        # replace strings in title
-        self.df['title'] = self.df.apply(lambda row: html.unescape(row['title']).strip(), axis=1)
-
     def __visualization(self):
         self.df.hist()
         plt.show()
@@ -74,6 +72,14 @@ class Pipeline:
         self.df['d_day_of_year'] = self.df['delivery_date'].apply(lambda d: d.dayofyear)
         self.df['d_week_of_year'] = self.df['delivery_date'].apply(lambda d: d.weekofyear)
         self.df['d_quarter'] = self.df['delivery_date'].apply(lambda d: d.quarter)
+
+        # title feature engineering
+        self.df['title_word_count'] = self.df['title'].apply(lambda x: len(str(x).split(" ")))
+        self.df['title_char_count'] = self.df['title'].str.len()
+
+        # title normalization
+        # self.df['title_word_count'] = self.df['title'].apply(lambda row: tn.normalize_corpus(row['title']), axis=1)
+        # train['word_count'] = train['tweet'].apply(lambda x: len(str(x).split(" ")))
 
     def __feature_scaling(self):
         pass
