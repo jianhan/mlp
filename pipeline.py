@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import html
 import text_normalizer as tn
+from nltk.corpus import stopwords
 
 class Pipeline:
 
@@ -80,15 +81,19 @@ class Pipeline:
         # title lowercase
         self.df['title'] = self.df['title'].apply(lambda x: " ".join(x.lower() for x in x.split()))
 
-        # title removing punctuation
-        self.df['title'] = self.df['title'].str.replace('[^\w\s]','')
-
         # title unescape html
         self.df['title'] = self.df['title'].apply(lambda x: html.unescape(x))
 
+        # title removing punctuation
+        self.df['title'] = self.df['title'].str.replace('[^\w\s]','')
+
+        # title remove stop words
+        stop = stopwords.words('english')
+        self.df['title'] = self.df['title'].apply(lambda x: " ".join(x for x in x.split() if x not in stop))
+
         # self.df['title_word_count'] = self.df.apply(lambda row: tn.normalize_corpus(row['title']), axis=1)
         # train['word_count'] = train['tweet'].apply(lambda x: len(str(x).split(" ")))
-        print(self.df[['title']].head(10))
+        # print(self.df[['title']].head(10))
 
     def __feature_scaling(self):
         pass
