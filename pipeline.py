@@ -5,6 +5,8 @@ import numpy as np
 import html
 import text_normalizer as tn
 from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import CountVectorizer
+from textblob import Word
 
 class Pipeline:
 
@@ -90,6 +92,23 @@ class Pipeline:
         # title remove stop words
         stop = stopwords.words('english')
         self.df['title'] = self.df['title'].apply(lambda x: " ".join(x for x in x.split() if x not in stop))
+
+        # title lemmatization 
+        self.df['title'] = self.df['title'].apply(lambda x: " ".join([Word(word).lemmatize() for word in x.split()]))
+        
+        # bow_converter = CountVectorizer(token_pattern='(?u)\\b\\w+\\b')
+        # # bigram_converter = CountVectorizer(ngram_range=(2,2), token_pattern='(?u)\\b\\w+\\b')
+        # # trigram_converter = CountVectorizer(ngram_range=(3,3),token_pattern='(?u)\\b\\w+\\b')
+
+        # # Fit the transformers and look at vocabulary size >>> bow_converter.fit(review_df['text'])
+        # bow_converter.fit(self.df['title'])
+        # words = bow_converter.get_feature_names()
+        # # bigram_converter.fit(self.df['title'])
+        # # bigrams = bigram_converter.get_feature_names() 
+        # # trigram_converter.fit(self.df['title'])
+        # # trigrams = trigram_converter.get_feature_names() 
+        # # print (len(words), len(bigrams), len(trigrams))
+        # print (len(words))
 
         # self.df['title_word_count'] = self.df.apply(lambda row: tn.normalize_corpus(row['title']), axis=1)
         # train['word_count'] = train['tweet'].apply(lambda x: len(str(x).split(" ")))
