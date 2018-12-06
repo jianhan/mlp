@@ -7,6 +7,7 @@ import text_normalizer as tn
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer
 from textblob import Word
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 class Pipeline:
 
@@ -95,7 +96,10 @@ class Pipeline:
 
         # title lemmatization 
         self.df['title'] = self.df['title'].apply(lambda x: " ".join([Word(word).lemmatize() for word in x.split()]))
-        
+
+        tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2', encoding='latin-1', ngram_range=(1, 2), stop_words='english')
+        self.df['title_vect'] = list(tfidf.fit_transform(self.df.title).toarray())
+        print(self.df[['title', 'title_vect']].head(10))
         # bow_converter = CountVectorizer(token_pattern='(?u)\\b\\w+\\b')
         # # bigram_converter = CountVectorizer(ngram_range=(2,2), token_pattern='(?u)\\b\\w+\\b')
         # # trigram_converter = CountVectorizer(ngram_range=(3,3),token_pattern='(?u)\\b\\w+\\b')
