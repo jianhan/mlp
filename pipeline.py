@@ -75,12 +75,12 @@ class Pipeline:
 
     def __visualization(self):
         # overall shop and qty sub plot
-        fig,ax = plt.subplots() 
-        sn.pointplot(data=self.df[['qty', 'd_day_of_week', 'shop_id']],x='d_day_of_week', y='qty', hue='shop_id', ax=ax)
-        ax.set(title="Shop wise qty distribution of counts")
+        # fig,ax = plt.subplots() 
+        # sn.pointplot(data=self.df[['qty', 'd_day_of_week', 'shop_id']],x='d_day_of_week', y='qty', hue='shop_id', ax=ax)
+        # ax.set(title="Shop wise qty distribution of counts")
 
         fig,ax = plt.subplots() 
-        sn.pointplot(data=self.df[['qty', 'd_day_of_week', 'd_month']],x='d_day_of_week', y='qty', hue='d_month', ax=ax)
+        sn.barplot(data=self.df[['d_month', 'qty']],x='d_month', y='qty', estimator=sum)
         ax.set(title="Month wise qty distribution of counts")
         plt.show()
 
