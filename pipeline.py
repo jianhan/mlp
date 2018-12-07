@@ -98,9 +98,11 @@ class Pipeline:
         # mask[np.tril_indices_from(mask)] = False
         # sn.heatmap(corrMatt, mask=mask, vmax=.8, square=True, annot=True)
 
-        sn.stripplot(x="d_day_of_week", y="qty", data=self.df, hue="shop_id", jitter=True)
+        # sn.stripplot(x="d_day_of_week", y="qty", data=self.df, hue="shop_id", jitter=True, size=.7)
+        # sn.stripplot(x="d_day", y="qty", data=self.df, hue="shop_id", jitter=True, size=.7)
 
-        plt.show()
+        # plt.show()
+        pass
 
     def __feature_engineering(self):
         # one hot encoding
