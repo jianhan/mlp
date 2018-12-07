@@ -11,7 +11,6 @@ from textblob import Word
 from sklearn.feature_extraction.text import TfidfVectorizer
 import seaborn as sn
 
-
 class Pipeline:
 
     def __init__(self):
@@ -93,11 +92,13 @@ class Pipeline:
         # sn.barplot(data=self.df[['d_month', 'qty']],x='d_month', y='qty', estimator=sum)
         # ax.set(title="Month wise qty distribution of counts")
 
-        corrMatt = self.df[["d_month", "d_day", "d_day_of_week",
-                            "price", "d_week_of_year", "shop_id", "delivery_date","qty"]].corr()
-        mask = np.array(corrMatt)
-        mask[np.tril_indices_from(mask)] = False
-        sn.heatmap(corrMatt, mask=mask, vmax=.8, square=True, annot=True)
+        # corrMatt = self.df[["d_month", "d_day", "d_day_of_week",
+        #                     "price", "d_week_of_year", "shop_id", "delivery_date","qty"]].corr()
+        # mask = np.array(corrMatt)
+        # mask[np.tril_indices_from(mask)] = False
+        # sn.heatmap(corrMatt, mask=mask, vmax=.8, square=True, annot=True)
+
+        sn.stripplot(x="d_day_of_week", y="qty", data=self.df, hue="shop_id", jitter=True)
 
         plt.show()
 
