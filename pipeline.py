@@ -9,19 +9,21 @@ from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer
 from textblob import Word
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 import seaborn as sn
+
 
 class Pipeline:
 
     def __init__(self):
         self.df = pd.read_csv(
-            'dataset.csv', engine='python', error_bad_lines=False)
+            'test.csv', engine='python', error_bad_lines=False)
 
     def run(self):
         self.__wrangling()
         self.__description()
         self.__visualization()
-        # self.__feature_engineering()
+        self.__feature_engineering()
 
     def __description(self):
         df_length = len(self.df)
@@ -54,6 +56,7 @@ class Pipeline:
         print(self.df.head(10))
 
     def __wrangling(self):
+
         # type casting
         self.df['delivery_date'] = pd.to_datetime(
             self.df.delivery_date, errors="coerce")
@@ -107,39 +110,27 @@ class Pipeline:
     def __feature_engineering(self):
         # one hot encoding
         self.df = pd.get_dummies(self.df, prefix=['sku'], columns=['sku'])
+
         self.df = pd.get_dummies(
             self.df, prefix=['delivery_zone'], columns=['delivery_zone'])
         self.df = pd.get_dummies(
             self.df, prefix=['shop_id'], columns=['shop_id'])
 
-        # title remove special characters
-        self.df['title'] = self.df['title'].apply(
-            lambda x: re.sub(r'\W+', '', x))
+        # title normalization
+        self.df['title'] = self.df['title'].apply(lambda x: tn.normalize_corpus(x))
 
-        # title lowercase
-        self.df['title'] = self.df['title'].apply(
-            lambda x: " ".join(x.lower() for x in x.split()))
-
-        # title unescape html
-        self.df['title'] = self.df['title'].apply(lambda x: html.unescape(x))
-
-        # title removing punctuation
-        self.df['title'] = self.df['title'].str.replace('[^\w\s]', '')
-
-        # title remove stop words
-        stop = stopwords.words('english')
-        self.df['title'] = self.df['title'].apply(
-            lambda x: " ".join(x for x in x.split() if x not in stop))
-
-        # title lemmatization
-        self.df['title'] = self.df['title'].apply(
-            lambda x: " ".join([Word(word).lemmatize() for word in x.split()]))
+        cv = CountVectorizer(min_df=0., max_df=1.)
+        cv_matrix = cv.fit_transform(self.df['title'])
+        cv_matrix = cv_matrix.toarray()
+        vocab = cv.get_feature_names()
+        newDf = pd.DataFrame(cv_matrix, columns=vocab)
+        print(pd.DataFrame(cv_matrix, columns=vocab), "***", newDf.shape)
+        pass
 
         # title vectorization
-        tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2',
-                                encoding='latin-1', ngram_range=(1, 2), stop_words='english')
-        self.df['title_vect'] = list(
-            tfidf.fit_transform(self.df.title).toarray())
+        # tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2',
+        #                         encoding='latin-1', ngram_range=(1, 2), stop_words='english')
+        # self.df['title_vect'] = list(tfidf.fit_transform(self.df.title).toarray())
 
     def __feature_scaling(self):
         pass
