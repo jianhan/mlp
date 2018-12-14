@@ -123,14 +123,10 @@ class Pipeline:
         cv_matrix = cv.fit_transform(self.df['title'])
         cv_matrix = cv_matrix.toarray()
         vocab = cv.get_feature_names()
-        newDf = pd.DataFrame(cv_matrix, columns=vocab)
-        print(pd.DataFrame(cv_matrix, columns=vocab), "***", newDf.shape)
-        pass
+        titleDf = pd.DataFrame(cv_matrix, columns=vocab)
 
-        # title vectorization
-        # tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, norm='l2',
-        #                         encoding='latin-1', ngram_range=(1, 2), stop_words='english')
-        # self.df['title_vect'] = list(tfidf.fit_transform(self.df.title).toarray())
+        self.df = pd.concat([self.df, titleDf], axis=1, join_axes=[self.df.index])
+        pass
 
     def __feature_scaling(self):
         pass
