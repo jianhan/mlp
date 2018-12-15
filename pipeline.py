@@ -11,6 +11,7 @@ from textblob import Word
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from textblob import TextBlob
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 import seaborn as sn
 
 COMMON_WORDS = ['x', '20', '2', '10', '4', '3']
@@ -26,6 +27,7 @@ class Pipeline:
         self.__description()
         self.__visualization()
         self.__feature_engineering()
+        self.__feature_scaling()
 
     def __description(self):
         df_length = len(self.df)
@@ -56,8 +58,11 @@ class Pipeline:
 
         # print sample data
         print(self.df.head(10))
+        
 
     def __wrangling(self):
+        # remove all rows that price is <= .50
+        self.df = self.df[self.df['price'] > 0.5]
 
         # type casting
         self.df['delivery_date'] = pd.to_datetime(
@@ -74,12 +79,9 @@ class Pipeline:
             lambda d: d.dayofweek)
         self.df['d_day_name'] = self.df['delivery_date'].apply(
             lambda d: d.day_name)
-        self.df['d_day_of_year'] = self.df['delivery_date'].apply(
-            lambda d: d.dayofyear)
-        self.df['d_week_of_year'] = self.df['delivery_date'].apply(
-            lambda d: d.weekofyear)
-        self.df['d_quarter'] = self.df['delivery_date'].apply(
-            lambda d: d.quarter)
+        self.df['d_day_of_year'] = self.df['delivery_date'].apply(lambda d: d.dayofyear)
+        self.df['d_week_of_year'] = self.df['delivery_date'].apply(lambda d: d.weekofyear)
+        self.df['d_quarter'] = self.df['delivery_date'].apply(lambda d: d.quarter)
 
         # title feature engineering
         self.df['title_word_count'] = self.df['title'].apply(
@@ -110,16 +112,17 @@ class Pipeline:
         pass
 
     def __feature_engineering(self):
-        # one hot encoding
+
+        # one hot encoding on sku
         self.df = pd.get_dummies(self.df, prefix=['sku'], columns=['sku'])
 
+        # one hot encoding on delivery_zone
         self.df = pd.get_dummies(
             self.df, prefix=['delivery_zone'], columns=['delivery_zone'])
+
+        # one hot encoding on shop_id
         self.df = pd.get_dummies(
             self.df, prefix=['shop_id'], columns=['shop_id'])
-
-        # title normalization
-        # self.df['title'] = self.df['title'].apply(lambda x: tn.normalize_corpus(x))
 
         # title remove special characters
         self.df['title'] = self.df['title'].apply(
@@ -162,6 +165,7 @@ class Pipeline:
         vocab = cv.get_feature_names()
         titleDf = pd.DataFrame(cv_matrix, columns=vocab)
         self.df = pd.concat([self.df, titleDf], axis=1, join_axes=[self.df.index])
+        self.df.drop('title', axis=1, inplace=True) 
 
     def frequent_words(self, count=100, commonOrRare=True):
         if (commonOrRare):
@@ -169,7 +173,16 @@ class Pipeline:
         return pd.Series(' '.join(self.df['title']).split()).value_counts()[-count:]
 
     def __feature_scaling(self):
-        pass
+        print("General Stats::11111")
+        print(self.df.info())
+        print("Summary Stats::11111")
+        print(self.df.describe())
+
+        # numeric_feature_names = ['qty', 'price', 'd_year', 'd_month', 'd_day', 'd_day_of_week']
+        # ss = StandardScaler()
+        # ss.fit(self.df[numeric_feature_names])
+        # self.df[numeric_feature_names] = ss.transform(self.df[numeric_feature_names])
+        # print('-------------------- \n',self.df.head(10))
 
     def __feature_selection(self):
         pass
