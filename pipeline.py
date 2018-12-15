@@ -12,12 +12,13 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 import seaborn as sn
 
+COMMON_WORDS = ['x', '20', '2', '10', '4', '3']
 
 class Pipeline:
 
     def __init__(self):
         self.df = pd.read_csv(
-            'test.csv', engine='python', error_bad_lines=False)
+            'dataset.csv', engine='python', error_bad_lines=False)
 
     def run(self):
         self.__wrangling()
@@ -117,15 +118,47 @@ class Pipeline:
             self.df, prefix=['shop_id'], columns=['shop_id'])
 
         # title normalization
-        self.df['title'] = self.df['title'].apply(lambda x: tn.normalize_corpus(x))
+        # self.df['title'] = self.df['title'].apply(lambda x: tn.normalize_corpus(x))
+
+        # title remove special characters
+        self.df['title'] = self.df['title'].apply(
+            lambda x: re.sub('[^a-zA-Z0-9\s]', '', x))
+
+        # title lowercase
+        self.df['title'] = self.df['title'].apply(
+            lambda x: " ".join(x.lower() for x in x.split()))
+
+        # title normalization
+        # self.df['title'] = self.df['title'].apply(lambda x: tn.normalize_corpus(x))
+
+        # title unescape html
+        self.df['title'] = self.df['title'].apply(lambda x: html.unescape(x))
+
+        # title removing punctuation
+        # self.df['title'] = self.df['title'].str.replace('[^\w\s]', '')
+
+        # title remove stop words
+        stop = stopwords.words('english')
+        self.df['title'] = self.df['title'].apply(
+            lambda x: " ".join(x for x in x.split() if x not in stop))
+
+        # title lemmatization
+        self.df['title'] = self.df['title'].apply(
+            lambda x: " ".join([Word(word).lemmatize() for word in x.split()]))
+
+        self.df['title'] = self.df['title'].apply(
+            lambda x: " ".join(x for x in x.split() if x not in COMMON_WORDS))
+
+        # freq = pd.Series(' '.join(self.df['title']).split()).value_counts()[:100]
+        # print(freq)
 
         cv = CountVectorizer(min_df=0., max_df=1.)
         cv_matrix = cv.fit_transform(self.df['title'])
         cv_matrix = cv_matrix.toarray()
         vocab = cv.get_feature_names()
         titleDf = pd.DataFrame(cv_matrix, columns=vocab)
-
         self.df = pd.concat([self.df, titleDf], axis=1, join_axes=[self.df.index])
+        print(self.df.columns)
         pass
 
     def __feature_scaling(self):
