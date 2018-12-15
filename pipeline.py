@@ -10,6 +10,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from textblob import Word
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
+from textblob import TextBlob
 import seaborn as sn
 
 COMMON_WORDS = ['x', '20', '2', '10', '4', '3']
@@ -146,20 +147,26 @@ class Pipeline:
         self.df['title'] = self.df['title'].apply(
             lambda x: " ".join([Word(word).lemmatize() for word in x.split()]))
 
+        # remove common words manually, since not all common words are useless
         self.df['title'] = self.df['title'].apply(
             lambda x: " ".join(x for x in x.split() if x not in COMMON_WORDS))
+        
+        # remove 100 rare words
+        rare_words = self.frequent_words(100, False)
+        self.df['title'] = self.df['title'].apply(lambda x: " ".join(x for x in x.split() if x not in rare_words))
 
-        # freq = pd.Series(' '.join(self.df['title']).split()).value_counts()[:100]
-        # print(freq)
-
+        # bag of words
         cv = CountVectorizer(min_df=0., max_df=1.)
         cv_matrix = cv.fit_transform(self.df['title'])
         cv_matrix = cv_matrix.toarray()
         vocab = cv.get_feature_names()
         titleDf = pd.DataFrame(cv_matrix, columns=vocab)
         self.df = pd.concat([self.df, titleDf], axis=1, join_axes=[self.df.index])
-        print(self.df.columns)
-        pass
+
+    def frequent_words(self, count=100, commonOrRare=True):
+        if (commonOrRare):
+            return pd.Series(' '.join(self.df['title']).split()).value_counts()[:count]
+        return pd.Series(' '.join(self.df['title']).split()).value_counts()[-count:]
 
     def __feature_scaling(self):
         pass
