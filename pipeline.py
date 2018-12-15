@@ -5,6 +5,10 @@ import numpy as np
 import html
 import re
 import text_normalizer as tn
+import sys
+from sklearn.feature_selection import VarianceThreshold
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.model_selection import train_test_split
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer
 from textblob import Word
@@ -15,6 +19,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 import seaborn as sn
 
 COMMON_WORDS = ['x', '20', '2', '10', '4', '3']
+
 
 class Pipeline:
 
@@ -28,6 +33,8 @@ class Pipeline:
         self.__visualization()
         self.__feature_engineering()
         self.__feature_scaling()
+        self.__feature_selection()
+        self.__modeling()
 
     def __description(self):
         df_length = len(self.df)
@@ -58,12 +65,11 @@ class Pipeline:
 
         # print sample data
         print(self.df.head(10))
-        
 
     def __wrangling(self):
         # remove all rows that price is <= .50
         self.df = self.df[self.df['price'] > 0.5]
-
+    
         # type casting
         self.df['delivery_date'] = pd.to_datetime(
             self.df.delivery_date, errors="coerce")
@@ -79,9 +85,14 @@ class Pipeline:
             lambda d: d.dayofweek)
         self.df['d_day_name'] = self.df['delivery_date'].apply(
             lambda d: d.day_name)
-        self.df['d_day_of_year'] = self.df['delivery_date'].apply(lambda d: d.dayofyear)
-        self.df['d_week_of_year'] = self.df['delivery_date'].apply(lambda d: d.weekofyear)
-        self.df['d_quarter'] = self.df['delivery_date'].apply(lambda d: d.quarter)
+        self.df['d_day_of_year'] = self.df['delivery_date'].apply(
+            lambda d: d.dayofyear)
+        self.df['d_week_of_year'] = self.df['delivery_date'].apply(
+            lambda d: d.weekofyear)
+        self.df['d_quarter'] = self.df['delivery_date'].apply(
+            lambda d: d.quarter)
+        self.df['is_weekend'] = self.df['delivery_date'].apply(
+            lambda d: d.weekday() >= 5)
 
         # title feature engineering
         self.df['title_word_count'] = self.df['title'].apply(
@@ -100,7 +111,7 @@ class Pipeline:
         # ax.set(title="Month wise qty distribution of counts")
 
         # corrMatt = self.df[["d_month", "d_day", "d_day_of_week",
-        #                     "price", "d_week_of_year", "shop_id", "delivery_date","qty"]].corr()
+        #                     "price", "d_week_of_year", "shop_id", "delivery_date","qty", "is_weekend"]].corr()
         # mask = np.array(corrMatt)
         # mask[np.tril_indices_from(mask)] = False
         # sn.heatmap(corrMatt, mask=mask, vmax=.8, square=True, annot=True)
@@ -153,19 +164,27 @@ class Pipeline:
         # remove common words manually, since not all common words are useless
         self.df['title'] = self.df['title'].apply(
             lambda x: " ".join(x for x in x.split() if x not in COMMON_WORDS))
-        
+
         # remove 100 rare words
         rare_words = self.frequent_words(100, False)
-        self.df['title'] = self.df['title'].apply(lambda x: " ".join(x for x in x.split() if x not in rare_words))
+        self.df['title'] = self.df['title'].apply(
+            lambda x: " ".join(x for x in x.split() if x not in rare_words))
 
         # bag of words
-        cv = CountVectorizer(min_df=0., max_df=1.)
+        # This basically builds a count vectorizer
+        # which ignores feature terms which occur in less than 10% of the total corpus and also ignores terms which occur in more than 85% of the total corpus.
+        cv = CountVectorizer(min_df=0.1, max_df=0.85)
         cv_matrix = cv.fit_transform(self.df['title'])
         cv_matrix = cv_matrix.toarray()
         vocab = cv.get_feature_names()
         titleDf = pd.DataFrame(cv_matrix, columns=vocab)
-        self.df = pd.concat([self.df, titleDf], axis=1, join_axes=[self.df.index])
-        self.df.drop('title', axis=1, inplace=True) 
+        self.df = pd.concat([self.df, titleDf], axis=1,
+                            join_axes=[self.df.index])
+        self.df.drop('title', axis=1, inplace=True)
+
+        # for some reason after all those data wrangling, some null values shows up again, needed to drop them
+        self.df.dropna(inplace=True)
+        self.df.drop('delivery_date', axis=1, inplace=True)
 
     def frequent_words(self, count=100, commonOrRare=True):
         if (commonOrRare):
@@ -173,22 +192,27 @@ class Pipeline:
         return pd.Series(' '.join(self.df['title']).split()).value_counts()[-count:]
 
     def __feature_scaling(self):
-        print("General Stats::11111")
-        print(self.df.info())
-        print("Summary Stats::11111")
-        print(self.df.describe())
-
-        # numeric_feature_names = ['qty', 'price', 'd_year', 'd_month', 'd_day', 'd_day_of_week']
-        # ss = StandardScaler()
-        # ss.fit(self.df[numeric_feature_names])
-        # self.df[numeric_feature_names] = ss.transform(self.df[numeric_feature_names])
-        # print('-------------------- \n',self.df.head(10))
+        # do not needed to scale, since values are similar
+        pass
 
     def __feature_selection(self):
+        # TODO: this needed to be done
         pass
 
     def __modeling(self):
-        pass
+        qty = self.df['qty']
+        self.df.drop(labels=['qty'], axis=1, inplace = True)
+
+        print(self.df.columns)
+
+        X_train, X_test, y_train, y_test = train_test_split(self.df, qty, test_size=0.3, random_state=42)
+        # Instantiate the model, set the number of neighbors to consider to 3:
+        reg = KNeighborsRegressor(n_neighbors=3)
+        # Fit the model using the training data and training targets:
+        reg.fit(X_train, y_train)
+        reg.predict(X_test)
+        print(reg.score(X_test, y_test))
+        print(X_train.shape, X_test.shape)
 
     def __model_evaluation(self):
         pass
