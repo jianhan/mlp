@@ -8,7 +8,15 @@ import text_normalizer as tn
 import sys
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
+from sklearn.tree import DecisionTreeClassifier
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer
 from textblob import Word
@@ -63,9 +71,6 @@ class Pipeline:
         print("Summary Stats::")
         print(self.df.describe())
 
-        # print sample data
-        print(self.df.head(10))
-
     def __wrangling(self):
         # remove all rows that price is <= .50
         self.df = self.df[self.df['price'] > 0.5]
@@ -83,8 +88,6 @@ class Pipeline:
         self.df['d_day'] = self.df['delivery_date'].apply(lambda d: d.day)
         self.df['d_day_of_week'] = self.df['delivery_date'].apply(
             lambda d: d.dayofweek)
-        self.df['d_day_name'] = self.df['delivery_date'].apply(
-            lambda d: d.day_name)
         self.df['d_day_of_year'] = self.df['delivery_date'].apply(
             lambda d: d.dayofyear)
         self.df['d_week_of_year'] = self.df['delivery_date'].apply(
@@ -203,16 +206,54 @@ class Pipeline:
         qty = self.df['qty']
         self.df.drop(labels=['qty'], axis=1, inplace = True)
 
-        print(self.df.columns)
-
-        X_train, X_test, y_train, y_test = train_test_split(self.df, qty, test_size=0.3, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(self.df, qty, test_size=0.3, random_state=0)
         # Instantiate the model, set the number of neighbors to consider to 3:
-        reg = KNeighborsRegressor(n_neighbors=3)
-        # Fit the model using the training data and training targets:
-        reg.fit(X_train, y_train)
-        reg.predict(X_test)
-        print(reg.score(X_test, y_test))
-        print(X_train.shape, X_test.shape)
+        # reg = KNeighborsRegressor(n_neighbors=3)
+        
+        # # Fit the model using the training data and training targets:
+        # reg.fit(X_train, y_train)
+        # reg.predict(X_test)
+
+        # lr = LinearRegression().fit(X_train, y_train)
+        # print("training set score: %f" % lr.score(X_train, y_train))
+        # print("test set score: %f" % lr.score(X_test, y_test))
+ 
+        # print(lr.score(X_test, y_test))
+
+        # ridge = Ridge(alpha=0.1).fit(X_train, y_train)
+        # print("training set score: %f" % ridge.score(X_train, y_train))
+        # print("test set score: %f" % ridge.score(X_test, y_test))
+
+        # lasso = Lasso().fit(X_train, y_train)
+        # print("training set score: %f" % lasso.score(X_train, y_train))
+        # print("test set score: %f" % lasso.score(X_test, y_test))
+        # print("number of features used: %d" % np.sum(lasso.coef_ != 0))
+
+        # tree = DecisionTreeClassifier(max_depth=8, random_state=50)
+        # tree.fit(X_train, y_train)
+        # print("accuracy on training set: %f" % tree.score(X_train, y_train))
+        # print("accuracy on test set: %f" % tree.score(X_test, y_test))
+
+        # forest = RandomForestClassifier(n_estimators=60, random_state=0, max_depth=5)
+        # forest.fit(X_train, y_train)
+        # print("accuracy on training set: %f" % forest.score(X_train, y_train))
+        # print("accuracy on test set: %f" % forest.score(X_test, y_test))
+
+        # gbrt = GradientBoostingClassifier(random_state=10)
+        # gbrt.fit(X_train, y_train)
+        # print("accuracy on training set: %f" % gbrt.score(X_train, y_train))
+        # print("accuracy on test set: %f" % gbrt.score(X_test, y_test))
+
+        svc = SVC()
+        svc.fit(X_train, y_train)
+        print("accuracy on training set: %f" % svc.score(X_train, y_train))
+        print("accuracy on test set: %f" % svc.score(X_test, y_test))
+
+        # mlp = MLPClassifier(max_iter=1000, random_state=0, alpha=1)
+        # mlp.fit(X_train, y_train)
+        # print("accuracy on training set: %f" % mlp.score(X_train, y_train))
+        # print("accuracy on test set: %f" % mlp.score(X_test, y_test))
+
 
     def __model_evaluation(self):
         pass
