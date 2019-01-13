@@ -33,7 +33,7 @@ class Pipeline:
 
     def __init__(self):
         self.df = pd.read_csv(
-            'dataset.csv', engine='python', error_bad_lines=False)
+            'test.csv', engine='python', error_bad_lines=False)
 
     def run(self):
         self.__wrangling()
@@ -74,7 +74,7 @@ class Pipeline:
     def __wrangling(self):
         # remove all rows that price is <= .50
         self.df = self.df[self.df['price'] > 0.5]
-    
+
         # type casting
         self.df['delivery_date'] = pd.to_datetime(
             self.df.delivery_date, errors="coerce")
@@ -176,6 +176,7 @@ class Pipeline:
         # bag of words
         # This basically builds a count vectorizer
         # which ignores feature terms which occur in less than 10% of the total corpus and also ignores terms which occur in more than 85% of the total corpus.
+
         cv = CountVectorizer(min_df=0.1, max_df=0.85)
         cv_matrix = cv.fit_transform(self.df['title'])
         cv_matrix = cv_matrix.toarray()
@@ -183,6 +184,7 @@ class Pipeline:
         titleDf = pd.DataFrame(cv_matrix, columns=vocab)
         self.df = pd.concat([self.df, titleDf], axis=1,
                             join_axes=[self.df.index])
+
         self.df.drop('title', axis=1, inplace=True)
 
         # for some reason after all those data wrangling, some null values shows up again, needed to drop them
@@ -196,64 +198,71 @@ class Pipeline:
 
     def __feature_scaling(self):
         # do not needed to scale, since values are similar
-        pass
+        ss = StandardScaler()
+        self.df['d_year'] = ss.fit_transform(self.df[['d_year']])
 
     def __feature_selection(self):
         # TODO: this needed to be done
         pass
 
     def __modeling(self):
-        qty = self.df['qty']
-        self.df.drop(labels=['qty'], axis=1, inplace = True)
 
-        X_train, X_test, y_train, y_test = train_test_split(self.df, qty, test_size=0.3, random_state=0)
+        qty = self.df['qty']
+        self.df.drop(labels=['qty'], axis=1, inplace=True)
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            self.df, qty, test_size=0.3, random_state=0)
         # Instantiate the model, set the number of neighbors to consider to 3:
         # reg = KNeighborsRegressor(n_neighbors=3)
-        
+
         # # Fit the model using the training data and training targets:
         # reg.fit(X_train, y_train)
         # reg.predict(X_test)
 
-        # lr = LinearRegression().fit(X_train, y_train)
-        # print("training set score: %f" % lr.score(X_train, y_train))
-        # print("test set score: %f" % lr.score(X_test, y_test))
- 
+        lr = LinearRegression().fit(X_train, y_train)
+        print("training set on LinearRegression score: %f" %
+              lr.score(X_train, y_train))
+        print("test set on LinearRegression score: %f" %
+              lr.score(X_test, y_test))
+
         # print(lr.score(X_test, y_test))
 
-        # ridge = Ridge(alpha=0.1).fit(X_train, y_train)
-        # print("training set score: %f" % ridge.score(X_train, y_train))
-        # print("test set score: %f" % ridge.score(X_test, y_test))
+        ridge = Ridge(alpha=0.1).fit(X_train, y_train)
+        print("training Ridge set score: %f" % ridge.score(X_train, y_train))
+        print("test Ridge set score: %f" % ridge.score(X_test, y_test))
 
         # lasso = Lasso().fit(X_train, y_train)
-        # print("training set score: %f" % lasso.score(X_train, y_train))
-        # print("test set score: %f" % lasso.score(X_test, y_test))
+        # print("training set score on Lasso: %f" % lasso.score(X_train, y_train))
+        # print("test set score on Lasso: %f" % lasso.score(X_test, y_test))
         # print("number of features used: %d" % np.sum(lasso.coef_ != 0))
 
-        # tree = DecisionTreeClassifier(max_depth=8, random_state=50)
-        # tree.fit(X_train, y_train)
-        # print("accuracy on training set: %f" % tree.score(X_train, y_train))
-        # print("accuracy on test set: %f" % tree.score(X_test, y_test))
+        tree = DecisionTreeClassifier(max_depth=8, random_state=50)
+        tree.fit(X_train, y_train)
+        print("accuracy on DecisionTreeClassifier training set: %f" %
+              tree.score(X_train, y_train))
+        print("accuracy on DecisionTreeClassifier test set: %f" %
+              tree.score(X_test, y_test))
 
-        # forest = RandomForestClassifier(n_estimators=60, random_state=0, max_depth=5)
-        # forest.fit(X_train, y_train)
-        # print("accuracy on training set: %f" % forest.score(X_train, y_train))
-        # print("accuracy on test set: %f" % forest.score(X_test, y_test))
+        forest = RandomForestClassifier(
+            n_estimators=60, random_state=20, max_depth=10)
+        forest.fit(X_train, y_train)
+        print("accuracy on RandomForestClassifier training set: %f" %
+              forest.score(X_train, y_train))
+        print("accuracy on RandomForestClassifier test set: %f" %
+              forest.score(X_test, y_test))
+        return
 
-        # gbrt = GradientBoostingClassifier(random_state=10)
-        # gbrt.fit(X_train, y_train)
-        # print("accuracy on training set: %f" % gbrt.score(X_train, y_train))
-        # print("accuracy on test set: %f" % gbrt.score(X_test, y_test))
+        gbrt = GradientBoostingClassifier(random_state=10)
+        gbrt.fit(X_train, y_train)
+        print("accuracy on GradientBoostingClassifier training set: %f" %
+              gbrt.score(X_train, y_train))
+        print("accuracy on GradientBoostingClassifier test set: %f" %
+              gbrt.score(X_test, y_test))
 
         svc = SVC()
         svc.fit(X_train, y_train)
-        print("accuracy on training set: %f" % svc.score(X_train, y_train))
-        print("accuracy on test set: %f" % svc.score(X_test, y_test))
-
-        # mlp = MLPClassifier(max_iter=1000, random_state=0, alpha=1)
-        # mlp.fit(X_train, y_train)
-        # print("accuracy on training set: %f" % mlp.score(X_train, y_train))
-        # print("accuracy on test set: %f" % mlp.score(X_test, y_test))
-
+        print("accuracy on SVC training set: %f" % svc.score(X_train, y_train))
+        print("accuracy on SVC test set: %f" % svc.score(X_test, y_test))
 
     def __model_evaluation(self):
         pass
