@@ -11,9 +11,8 @@ def unique_skus():
     gle = LabelEncoder()
     sku_labels = gle.fit_transform(df['sku'])
     sku_mappings = {index: label for index, label in enumerate(gle.classes_)}
-    print(sku_mappings)
-
-    # return unique_skus
+    df['sku_labels'] = sku_labels
+    df.drop('sku', axis=1, inplace=True)
 
 
 unique_skus()

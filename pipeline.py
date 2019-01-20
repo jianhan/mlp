@@ -22,6 +22,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from textblob import Word
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.preprocessing import LabelEncoder
 from textblob import TextBlob
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 import seaborn as sn
@@ -33,7 +34,7 @@ class Pipeline:
 
     def __init__(self):
         self.df = pd.read_csv(
-            'test.csv', engine='python', error_bad_lines=False)
+            'csvs/test.csv', engine='python', error_bad_lines=False)
 
     def run(self):
         self.__wrangling()
@@ -98,9 +99,9 @@ class Pipeline:
             lambda d: d.weekday() >= 5)
 
         # title feature engineering
-        self.df['title_word_count'] = self.df['title'].apply(
-            lambda x: len(str(x).split(" ")))
-        self.df['title_char_count'] = self.df['title'].str.len()
+        # self.df['title_word_count'] = self.df['title'].apply(
+        #     lambda x: len(str(x).split(" ")))
+        # self.df['title_char_count'] = self.df['title'].str.len()
 
     def __visualization(self):
         # overall shop and qty sub plot
@@ -113,77 +114,88 @@ class Pipeline:
         # sn.barplot(data=self.df[['d_month', 'qty']],x='d_month', y='qty', estimator=sum)
         # ax.set(title="Month wise qty distribution of counts")
 
-        # corrMatt = self.df[["d_month", "d_day", "d_day_of_week",
-        #                     "price", "d_week_of_year", "shop_id", "delivery_date","qty", "is_weekend"]].corr()
-        # mask = np.array(corrMatt)
-        # mask[np.tril_indices_from(mask)] = False
-        # sn.heatmap(corrMatt, mask=mask, vmax=.8, square=True, annot=True)
+        corrMatt = self.df[["d_month", "d_day", "d_day_of_week",
+                            "price", "d_week_of_year", "shop_id", "delivery_date","qty", "is_weekend"]].corr()
+        mask = np.array(corrMatt)
+        mask[np.tril_indices_from(mask)] = False
+        sn.heatmap(corrMatt, mask=mask, vmax=.8, square=True, annot=True)
 
         # sn.stripplot(x="d_day_of_week", y="qty", data=self.df, hue="shop_id", jitter=True, size=.7)
         # sn.stripplot(x="d_day", y="qty", data=self.df, hue="shop_id", jitter=True, size=.7)
 
-        # plt.show()
+        plt.show()
         pass
 
     def __feature_engineering(self):
 
-        # one hot encoding on sku
-        self.df = pd.get_dummies(self.df, prefix=['sku'], columns=['sku'])
+        # # one hot encoding on sku
+        # self.df = pd.get_dummies(self.df, prefix=['sku'], columns=['sku'])
+
+        self.df['sku'] = self.df['sku'].apply(lambda x: str(x).upper())
+        unique_skus = self.df.sku.unique()
+
+        gle = LabelEncoder()
+        sku_labels = gle.fit_transform(self.df['sku'])
+        sku_mappings = {index: label for index,
+                        label in enumerate(gle.classes_)}
+        self.df['sku_labels'] = sku_labels
+        self.df.drop('sku', axis=1, inplace=True)
 
         # one hot encoding on delivery_zone
         self.df = pd.get_dummies(
             self.df, prefix=['delivery_zone'], columns=['delivery_zone'])
+        self.df.drop('delivery_zone', axis=1, inplace=True)
 
         # one hot encoding on shop_id
         self.df = pd.get_dummies(
             self.df, prefix=['shop_id'], columns=['shop_id'])
 
-        # title remove special characters
-        self.df['title'] = self.df['title'].apply(
-            lambda x: re.sub('[^a-zA-Z0-9\s]', '', x))
+        # # title remove special characters
+        # self.df['title'] = self.df['title'].apply(
+        #     lambda x: re.sub('[^a-zA-Z0-9\s]', '', x))
 
-        # title lowercase
-        self.df['title'] = self.df['title'].apply(
-            lambda x: " ".join(x.lower() for x in x.split()))
+        # # title lowercase
+        # self.df['title'] = self.df['title'].apply(
+        #     lambda x: " ".join(x.lower() for x in x.split()))
 
-        # title normalization
-        # self.df['title'] = self.df['title'].apply(lambda x: tn.normalize_corpus(x))
+        # # title normalization
+        # # self.df['title'] = self.df['title'].apply(lambda x: tn.normalize_corpus(x))
 
-        # title unescape html
-        self.df['title'] = self.df['title'].apply(lambda x: html.unescape(x))
+        # # title unescape html
+        # self.df['title'] = self.df['title'].apply(lambda x: html.unescape(x))
 
-        # title removing punctuation
-        # self.df['title'] = self.df['title'].str.replace('[^\w\s]', '')
+        # # title removing punctuation
+        # # self.df['title'] = self.df['title'].str.replace('[^\w\s]', '')
 
-        # title remove stop words
-        stop = stopwords.words('english')
-        self.df['title'] = self.df['title'].apply(
-            lambda x: " ".join(x for x in x.split() if x not in stop))
+        # # title remove stop words
+        # stop = stopwords.words('english')
+        # self.df['title'] = self.df['title'].apply(
+        #     lambda x: " ".join(x for x in x.split() if x not in stop))
 
-        # title lemmatization
-        self.df['title'] = self.df['title'].apply(
-            lambda x: " ".join([Word(word).lemmatize() for word in x.split()]))
+        # # title lemmatization
+        # self.df['title'] = self.df['title'].apply(
+        #     lambda x: " ".join([Word(word).lemmatize() for word in x.split()]))
 
-        # remove common words manually, since not all common words are useless
-        self.df['title'] = self.df['title'].apply(
-            lambda x: " ".join(x for x in x.split() if x not in COMMON_WORDS))
+        # # remove common words manually, since not all common words are useless
+        # self.df['title'] = self.df['title'].apply(
+        #     lambda x: " ".join(x for x in x.split() if x not in COMMON_WORDS))
 
-        # remove 100 rare words
-        rare_words = self.frequent_words(100, False)
-        self.df['title'] = self.df['title'].apply(
-            lambda x: " ".join(x for x in x.split() if x not in rare_words))
+        # # remove 100 rare words
+        # rare_words = self.frequent_words(100, False)
+        # self.df['title'] = self.df['title'].apply(
+        #     lambda x: " ".join(x for x in x.split() if x not in rare_words))
 
         # bag of words
         # This basically builds a count vectorizer
         # which ignores feature terms which occur in less than 10% of the total corpus and also ignores terms which occur in more than 85% of the total corpus.
 
-        cv = CountVectorizer(min_df=0.1, max_df=0.85)
-        cv_matrix = cv.fit_transform(self.df['title'])
-        cv_matrix = cv_matrix.toarray()
-        vocab = cv.get_feature_names()
-        titleDf = pd.DataFrame(cv_matrix, columns=vocab)
-        self.df = pd.concat([self.df, titleDf], axis=1,
-                            join_axes=[self.df.index])
+        # cv = CountVectorizer(min_df=0.1, max_df=0.85)
+        # cv_matrix = cv.fit_transform(self.df['title'])
+        # cv_matrix = cv_matrix.toarray()
+        # vocab = cv.get_feature_names()
+        # titleDf = pd.DataFrame(cv_matrix, columns=vocab)
+        # self.df = pd.concat([self.df, titleDf], axis=1,
+        #                     join_axes=[self.df.index])
 
         self.df.drop('title', axis=1, inplace=True)
 
@@ -198,16 +210,17 @@ class Pipeline:
 
     def __feature_scaling(self):
         # do not needed to scale, since values are similar
-        ss = StandardScaler()
-        self.df['d_year'] = ss.fit_transform(self.df[['d_year']])
+        # ss = StandardScaler()
+        # self.df['d_year'] = ss.fit_transform(self.df[['d_year']])
+        pass
 
     def __feature_selection(self):
         # TODO: this needed to be done
         pass
 
     def __modeling(self):
-
         qty = self.df['qty']
+        print(self.df.head(10))
         self.df.drop(labels=['qty'], axis=1, inplace=True)
 
         X_train, X_test, y_train, y_test = train_test_split(
@@ -250,8 +263,7 @@ class Pipeline:
               forest.score(X_train, y_train))
         print("accuracy on RandomForestClassifier test set: %f" %
               forest.score(X_test, y_test))
-        return
-
+        return False
         gbrt = GradientBoostingClassifier(random_state=10)
         gbrt.fit(X_train, y_train)
         print("accuracy on GradientBoostingClassifier training set: %f" %
